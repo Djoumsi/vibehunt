@@ -62,3 +62,35 @@ def test_plateforme_non_bloquante():
 def test_fingerprint_stable(vuln):
     fps = [f["fingerprint"] for f in vuln["findings"]]
     assert len(fps) == len(set(fps)), "les empreintes doivent être uniques (dédoublonnage)"
+
+
+# --- v0.2 : nouveaux détecteurs ---
+
+def test_detecte_cors_permissif(vuln):
+    assert any("CORS" in t for t in titles(vuln))
+
+
+def test_detecte_route_debug(vuln):
+    assert any("debug" in t.lower() for t in titles(vuln))
+
+
+def test_detecte_env_versionne(vuln):
+    assert any(".env" in t for t in titles(vuln) if "Fichier sensible" in t)
+
+
+def test_detecte_xss(vuln):
+    assert any("XSS" in t for t in titles(vuln))
+
+
+def test_detecte_injection_sql(vuln):
+    assert any("SQL" in t for t in titles(vuln))
+
+
+def test_detecte_hash_faible(vuln):
+    assert any("MD5" in t or "faible" in t.lower() for t in titles(vuln))
+
+
+def test_html_report_genere(vuln):
+    from vibehunt import report
+    h = report.to_html(vuln)
+    assert h.startswith("<!DOCTYPE html>") and "vibehunt" in h and "CRITIQUE" in h

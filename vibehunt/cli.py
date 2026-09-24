@@ -45,7 +45,11 @@ def cmd_scan(args):
 
     if args.out:
         Path(args.out).write_text(md, encoding="utf-8")
-        print(f"\nRapport écrit dans {args.out}", file=sys.stderr)
+        print(f"\nRapport Markdown écrit dans {args.out}", file=sys.stderr)
+
+    if args.html:
+        Path(args.html).write_text(report.to_html(result), encoding="utf-8")
+        print(f"Rapport HTML écrit dans {args.html}", file=sys.stderr)
 
     if not args.no_store:
         sid = collector.store(result, args.db)
@@ -109,6 +113,7 @@ def main(argv=None):
     s.add_argument("target", help="chemin local ou URL GitHub")
     s.add_argument("--json", action="store_true")
     s.add_argument("--out", help="écrire le rapport Markdown dans un fichier")
+    s.add_argument("--html", help="écrire un rapport HTML autonome dans un fichier")
     s.add_argument("--no-store", action="store_true", help="ne pas collecter en base")
     s.set_defaults(func=cmd_scan)
 

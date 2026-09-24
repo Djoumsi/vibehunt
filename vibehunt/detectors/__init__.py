@@ -1,5 +1,7 @@
-"""Détecteurs de failles. Chaque détecteur expose run(ctx) -> list[Finding]."""
-from . import secrets, supabase_rls, client_authz
+"""Détecteurs de failles. Chaque détecteur expose run(ctx) -> ajoute des Finding."""
+from . import (secrets, supabase_rls, client_authz, cors,
+               exposed_files, input_validation, dependencies)
 
 # Registre : ordre = ordre d'exécution. Ajoute un détecteur ici pour l'activer.
-ALL = [secrets, supabase_rls, client_authz]
+ALL = [secrets, supabase_rls, client_authz, cors,
+       exposed_files, input_validation, dependencies]

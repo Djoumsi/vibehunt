@@ -49,8 +49,9 @@ vibehunt scan ./mon-app
 # … ou directement depuis GitHub (clone temporaire)
 vibehunt scan https://github.com/moi/mon-app
 
-# Rapport dans un fichier + sortie JSON
+# Rapports dans un fichier (Markdown, HTML autonome) + sortie JSON
 vibehunt scan ./mon-app --out rapport.md
+vibehunt scan ./mon-app --html rapport.html
 vibehunt scan ./mon-app --json
 
 # Statistiques agrégées de toutes vos collectes
@@ -77,9 +78,13 @@ vibehunt/
 ├── collector.py      # collecte SQLite (historique multi-apps + stats)
 ├── report.py         # rapport Markdown + JSON
 └── detectors/        # cœur extensible : un module = une famille de failles
-    ├── secrets.py         # clés/API en dur, avec surpondération côté client
-    ├── supabase_rls.py    # service_role client, RLS off, tables non protégées
-    └── client_authz.py    # contrôle d'accès côté client uniquement
+    ├── secrets.py            # clés/API en dur, surpondérées côté client
+    ├── supabase_rls.py       # service_role client, RLS off, tables non protégées
+    ├── client_authz.py       # contrôle d'accès côté client uniquement
+    ├── cors.py               # CORS permissif (origine * + credentials)
+    ├── exposed_files.py      # .env versionné, routes de debug/seed exposées
+    ├── input_validation.py   # XSS (dangerouslySetInnerHTML, v-html…) et injection SQL
+    └── dependencies.py       # SCA (npm audit), lockfile absent, hachage MD5/SHA1
 ```
 
 ### Ajouter un détecteur
@@ -94,11 +99,13 @@ score de risque 0–100).
 
 ## Feuille de route
 
-- **v0.1 (actuel)** : secrets, RLS Supabase, autorisation client ; collecte
-  SQLite ; rapport ; mode dynamique RLS.
-- **v0.2** : CORS permissif, fichiers/endpoints exposés, validation d'entrée
-  (XSS/injection), dépendances vulnérables (SCA).
-- **v0.3** : détection Firebase (règles ouvertes), rapport HTML, export CI.
+- **v0.1** : secrets, RLS Supabase, autorisation client ; collecte SQLite ;
+  rapport Markdown/JSON ; mode dynamique RLS.
+- **v0.2 (actuel)** : CORS permissif, fichiers/endpoints exposés, validation
+  d'entrée (XSS/injection SQL), dépendances (SCA + hachage faible),
+  **rapport HTML** présentable.
+- **v0.3** : Firebase (règles ouvertes), CSRF/rate-limiting manquants,
+  validation de webhooks (HMAC), export CI/SARIF.
 
 ## Tests
 
