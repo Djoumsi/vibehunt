@@ -84,7 +84,9 @@ vibehunt/
     ├── cors.py               # CORS permissif (origine * + credentials)
     ├── exposed_files.py      # .env versionné, routes de debug/seed exposées
     ├── input_validation.py   # XSS (dangerouslySetInnerHTML, v-html…) et injection SQL
-    └── dependencies.py       # SCA (npm audit), lockfile absent, hachage MD5/SHA1
+    ├── dependencies.py       # SCA (npm audit), lockfile absent, hachage MD5/SHA1
+    ├── ssrf.py               # requête sortante vers une URL contrôlée par l'utilisateur
+    └── missing_protections.py # CSRF, rate limiting, signature de webhook (HMAC) absents
 ```
 
 ### Ajouter un détecteur
@@ -101,11 +103,23 @@ score de risque 0–100).
 
 - **v0.1** : secrets, RLS Supabase, autorisation client ; collecte SQLite ;
   rapport Markdown/JSON ; mode dynamique RLS.
-- **v0.2 (actuel)** : CORS permissif, fichiers/endpoints exposés, validation
-  d'entrée (XSS/injection SQL), dépendances (SCA + hachage faible),
-  **rapport HTML** présentable.
-- **v0.3** : Firebase (règles ouvertes), CSRF/rate-limiting manquants,
-  validation de webhooks (HMAC), export CI/SARIF.
+- **v0.2** : CORS permissif, fichiers/endpoints exposés, validation d'entrée
+  (XSS/injection SQL), dépendances (SCA + hachage faible), rapport HTML.
+- **v0.3 (actuel)** : SSRF (URL contrôlée par l'utilisateur), et détection
+  d'ABSENCE de protection — CSRF, rate limiting sur l'auth, signature de
+  webhook (HMAC). Détecteurs d'absence conditionnés à des prérequis stricts
+  et marqués « à vérifier » pour limiter les faux positifs.
+- **v0.4** : Firebase (règles ouvertes), export CI/SARIF, rapport comparatif
+  multi-apps depuis la base de collecte.
+
+## Note de conception : présence vs absence
+
+Détecter la PRÉSENCE d'un défaut (un secret, une requête SQL concaténée) est
+fiable. Détecter l'ABSENCE d'un contrôle (pas de CSRF, pas de rate limiting)
+l'est moins : c'est pourquoi ces règles ne se déclenchent que si le contrôle
+est réellement attendu (ex. CSRF seulement si des sessions par cookie et des
+routes mutatrices existent) et sont marquées « à vérifier ». Objectif : n'alerter
+que quand c'est pertinent. Le mode `--live` sert à confirmer sur l'app réelle.
 
 ## Tests
 

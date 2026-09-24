@@ -94,3 +94,28 @@ def test_html_report_genere(vuln):
     from vibehunt import report
     h = report.to_html(vuln)
     assert h.startswith("<!DOCTYPE html>") and "vibehunt" in h and "CRITIQUE" in h
+
+
+# --- v0.3 : SSRF + absence de protections ---
+
+def test_detecte_ssrf(vuln):
+    assert any("SSRF" in t for t in titles(vuln))
+
+
+def test_detecte_webhook_sans_signature(vuln):
+    assert any("webhook" in t.lower() for t in titles(vuln))
+
+
+def test_detecte_rate_limiting_absent(vuln):
+    assert any("rate limiting" in t.lower() for t in titles(vuln))
+
+
+def test_detecte_csrf_absent(vuln):
+    assert any("CSRF" in t for t in titles(vuln))
+
+
+def test_absence_control_ne_matche_pas_un_commentaire():
+    # une simple mention "csrf" en commentaire ne doit pas faire croire à une protection
+    from vibehunt.detectors import missing_protections as mp
+    assert not mp.CSRF_LIB.search("// TODO: penser au csrf plus tard")
+    assert mp.CSRF_LIB.search("app.use(csrfProtection)")
