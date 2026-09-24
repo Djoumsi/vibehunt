@@ -19,7 +19,7 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import engine, report, collector, sarif
+from . import engine, report, collector, sarif, webscan
 
 _PAGE = """<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -50,6 +50,7 @@ background:var(--card);color:var(--fg);text-decoration:none;font-size:.9rem}}
 <p class="sub">Scanner de sécurité pour applications vibe codées — interface locale</p>
 <div class="tabs">
   <a class="tab {t_scan}" href="/">Scan statique</a>
+  <a class="tab {t_url}" href="/url">App en ligne (URL)</a>
   <a class="tab {t_live}" href="/live">Vérification live (Supabase)</a>
   <a class="tab {t_hist}" href="/history">Comparatif</a>
 </div>
@@ -63,6 +64,16 @@ _FORM_SCAN = """
   <input type="text" name="target" placeholder="https://github.com/moi/mon-app  ou  /chemin/vers/app" required>
   <p class="hint">Une URL est clonée temporairement. Fonctionne sur toute app, quel que soit l'outil qui l'a générée.</p>
   <button type="submit">Lancer le scan</button>
+</form></div>
+"""
+
+_FORM_URL = """
+<div class="card"><h2>Analyser une application en ligne (URL seule)</h2>
+<p class="hint">Scan black-box passif d'une app déployée dont vous êtes propriétaire : en-têtes de sécurité, cookies, chemins sensibles, secrets dans le bundle JS, et test RLS Supabase automatique si des identifiants sont trouvés.</p>
+<form method="post" action="/url">
+  <label>URL de l'application</label>
+  <input type="text" name="url" placeholder="https://mon-app.com" required>
+  <button type="submit">Analyser l'app en ligne</button>
 </form></div>
 """
 
@@ -83,6 +94,7 @@ _FORM_LIVE = """
 
 def _tabs(active):
     return {"t_scan": "active" if active == "scan" else "",
+            "t_url": "active" if active == "url" else "",
             "t_live": "active" if active == "live" else "",
             "t_hist": "active" if active == "hist" else ""}
 
@@ -153,7 +165,9 @@ class Handler(BaseHTTPRequestHandler):
         return _PAGE.format(body=body, **d)
 
     def do_GET(self):
-        if self.path.startswith("/live"):
+        if self.path.startswith("/url"):
+            self._send(self._page("url", _FORM_URL))
+        elif self.path.startswith("/live"):
             self._send(self._page("live", _FORM_LIVE))
         elif self.path.startswith("/history"):
             self._send(self._page("hist", self._history_body()))
@@ -190,6 +204,12 @@ class Handler(BaseHTTPRequestHandler):
                 # on réinjecte le rapport dans l'onglet
                 inner = body[body.find("<body>") + 6: body.rfind("</body>")]
                 self._send(self._page("scan", _FORM_SCAN + f'<div class="result">{inner}</div>'))
+            elif self.path == "/url":
+                result = webscan.scan_url(params.get("url", "").strip())
+                collector.store(result)
+                full = report.to_html(result)
+                inner = full[full.find("<body>") + 6: full.rfind("</body>")]
+                self._send(self._page("url", _FORM_URL + f'<div class="result">{inner}</div>'))
             elif self.path == "/live":
                 body = _live_check(params.get("supabase_url", ""), params.get("anon_key", ""),
                                    params.get("tables", ""))

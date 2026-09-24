@@ -146,3 +146,20 @@ def test_webui_importe_et_rend(vuln):
     # la page enveloppe se formate sans erreur
     page = webui._PAGE.format(body="x", **webui._tabs("scan"))
     assert "vibehunt" in page and "Scan statique" in page
+
+
+# --- v0.6 : scan black-box (fonctions pures, sans réseau) ---
+
+def test_webscan_headers_manquants():
+    from vibehunt import webscan
+    f = []
+    # simuler l'analyse : on appelle la logique d'en-têtes via un faux résultat
+    # (test de la table des en-têtes attendus)
+    assert "content-security-policy" in webscan.SECURITY_HEADERS
+    assert "strict-transport-security" in webscan.SECURITY_HEADERS
+
+
+def test_webscan_regex_supabase():
+    from vibehunt import webscan
+    assert webscan.SUPABASE_URL_RE.search("const u='https://abcdef1234567890.supabase.co'")
+    assert webscan.SCRIPT_SRC_RE.findall('<script src="/assets/index-abc.js"></script>') == ["/assets/index-abc.js"]

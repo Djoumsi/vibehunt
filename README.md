@@ -58,7 +58,10 @@ vibehunt scan ./mon-app --json
 # Comparatif de toutes les apps scannées (depuis la base de collecte)
 vibehunt report
 
-# Interface graphique locale (navigateur) : scan, vérification live, comparatif
+# Scan black-box d'une app EN LIGNE (URL seule, sans le code) — vos apps
+vibehunt scan-url https://mon-app.com
+
+# Interface graphique locale (navigateur) : scan, URL, vérification live, comparatif
 vibehunt serve            # puis ouvrir http://127.0.0.1:8000
 
 # Statistiques agrégées de toutes vos collectes
@@ -86,6 +89,7 @@ vibehunt/
 ├── report.py         # rapport Markdown + JSON + HTML
 ├── sarif.py          # export SARIF 2.1.0 (GitHub Code Scanning)
 ├── webui.py          # interface web locale (serveur stdlib)
+├── webscan.py        # scan black-box d'une app en ligne (URL seule)
 └── detectors/        # cœur extensible : un module = une famille de failles
     ├── secrets.py            # clés/API en dur, surpondérées côté client
     ├── supabase_rls.py       # service_role client, RLS off, tables non protégées
@@ -123,7 +127,10 @@ score de risque 0–100).
   (GitHub Code Scanning), commande `report` comparant les apps collectées.
 - **v0.5 (actuel)** : interface web locale (`vibehunt serve`) — scan, résultats
   visuels, vérification live Supabase et comparatif, sans dépendance externe.
-- **v0.6 (idées)** : détection de licences, SBOM, plugin CI prêt à l'emploi.
+- **v0.6 (actuel)** : scan black-box d'une app en ligne (`scan-url`) — en-têtes,
+  cookies, chemins sensibles, secrets dans le bundle JS servi, et test RLS
+  Supabase automatique si les identifiants sont découverts dans le front.
+- **v0.7 (idées)** : détection de licences, SBOM, plugin CI prêt à l'emploi.
 
 ## Note de conception : présence vs absence
 

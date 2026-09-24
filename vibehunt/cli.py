@@ -17,7 +17,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import engine, report, collector, sarif, webui
+from . import engine, report, collector, sarif, webui, webscan
 
 
 def _clone_if_url(target: str) -> tuple[str, bool]:
@@ -67,6 +67,18 @@ def cmd_scan(args):
 def cmd_stats(args):
     import json
     print(json.dumps(collector.stats(args.db), ensure_ascii=False, indent=2))
+
+
+def cmd_scan_url(args):
+    result = webscan.scan_url(args.url)
+    md = report.to_markdown(result)
+    if args.json: print(report.to_json(result))
+    else: print(md)
+    if args.out: Path(args.out).write_text(md, encoding="utf-8"); print(f"\nMarkdown: {args.out}", file=sys.stderr)
+    if args.html: Path(args.html).write_text(report.to_html(result), encoding="utf-8"); print(f"HTML: {args.html}", file=sys.stderr)
+    if not args.no_store: collector.store(result, args.db)
+    crit = any(f["severity"] in ("critique", "elevee") for f in result["findings"])
+    sys.exit(1 if crit else 0)
 
 
 def cmd_serve(args):
@@ -150,6 +162,14 @@ def main(argv=None):
 
     rp = sub.add_parser("report", help="rapport comparatif multi-apps depuis la collecte")
     rp.set_defaults(func=cmd_report)
+
+    su = sub.add_parser("scan-url", help="scan black-box d'une app en ligne (URL seule)")
+    su.add_argument("url", help="URL de l'application déployée (vos apps)")
+    su.add_argument("--json", action="store_true")
+    su.add_argument("--out", help="rapport Markdown")
+    su.add_argument("--html", help="rapport HTML")
+    su.add_argument("--no-store", action="store_true")
+    su.set_defaults(func=cmd_scan_url)
 
     sv = sub.add_parser("serve", help="lancer l'interface web locale")
     sv.add_argument("--port", type=int, default=8000)
