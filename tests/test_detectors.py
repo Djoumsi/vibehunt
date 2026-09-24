@@ -134,3 +134,15 @@ def test_export_sarif_valide(vuln):
     assert doc["version"] == "2.1.0"
     assert doc["runs"][0]["tool"]["driver"]["name"] == "vibehunt"
     assert len(doc["runs"][0]["results"]) == len(vuln["findings"])
+
+
+# --- v0.5 : interface web ---
+
+def test_webui_importe_et_rend(vuln):
+    from vibehunt import webui, report
+    # le rendu HTML du rapport doit s'intégrer dans la page (pas d'exception)
+    inner = report.to_html(vuln)
+    assert "<body>" in inner and "vibehunt" in inner
+    # la page enveloppe se formate sans erreur
+    page = webui._PAGE.format(body="x", **webui._tabs("scan"))
+    assert "vibehunt" in page and "Scan statique" in page

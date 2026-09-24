@@ -58,6 +58,9 @@ vibehunt scan ./mon-app --json
 # Comparatif de toutes les apps scannées (depuis la base de collecte)
 vibehunt report
 
+# Interface graphique locale (navigateur) : scan, vérification live, comparatif
+vibehunt serve            # puis ouvrir http://127.0.0.1:8000
+
 # Statistiques agrégées de toutes vos collectes
 vibehunt stats
 
@@ -80,7 +83,9 @@ vibehunt/
 ├── model.py          # Finding + ScanContext (lecture filtrée du dépôt)
 ├── platforms.py      # empreinte de plateforme (non bloquante)
 ├── collector.py      # collecte SQLite (historique multi-apps + stats)
-├── report.py         # rapport Markdown + JSON
+├── report.py         # rapport Markdown + JSON + HTML
+├── sarif.py          # export SARIF 2.1.0 (GitHub Code Scanning)
+├── webui.py          # interface web locale (serveur stdlib)
 └── detectors/        # cœur extensible : un module = une famille de failles
     ├── secrets.py            # clés/API en dur, surpondérées côté client
     ├── supabase_rls.py       # service_role client, RLS off, tables non protégées
@@ -116,7 +121,9 @@ score de risque 0–100).
   et marqués « à vérifier » pour limiter les faux positifs.
 - **v0.4 (actuel)** : détecteur Firebase (règles ouvertes), export **SARIF 2.1.0**
   (GitHub Code Scanning), commande `report` comparant les apps collectées.
-- **v0.5 (idées)** : détection de licences, SBOM, plugin CI prêt à l'emploi.
+- **v0.5 (actuel)** : interface web locale (`vibehunt serve`) — scan, résultats
+  visuels, vérification live Supabase et comparatif, sans dépendance externe.
+- **v0.6 (idées)** : détection de licences, SBOM, plugin CI prêt à l'emploi.
 
 ## Note de conception : présence vs absence
 

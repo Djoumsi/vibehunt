@@ -17,7 +17,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import engine, report, collector, sarif
+from . import engine, report, collector, sarif, webui
 
 
 def _clone_if_url(target: str) -> tuple[str, bool]:
@@ -67,6 +67,10 @@ def cmd_scan(args):
 def cmd_stats(args):
     import json
     print(json.dumps(collector.stats(args.db), ensure_ascii=False, indent=2))
+
+
+def cmd_serve(args):
+    webui.serve(host=args.host, port=args.port)
 
 
 def cmd_report(args):
@@ -146,6 +150,11 @@ def main(argv=None):
 
     rp = sub.add_parser("report", help="rapport comparatif multi-apps depuis la collecte")
     rp.set_defaults(func=cmd_report)
+
+    sv = sub.add_parser("serve", help="lancer l'interface web locale")
+    sv.add_argument("--port", type=int, default=8000)
+    sv.add_argument("--host", default="127.0.0.1")
+    sv.set_defaults(func=cmd_serve)
 
     lv = sub.add_parser("live", help="confirmation dynamique RLS Supabase (vos apps)")
     lv.add_argument("url", help="URL de l'app (informatif)")
