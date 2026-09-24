@@ -119,3 +119,18 @@ def test_absence_control_ne_matche_pas_un_commentaire():
     from vibehunt.detectors import missing_protections as mp
     assert not mp.CSRF_LIB.search("// TODO: penser au csrf plus tard")
     assert mp.CSRF_LIB.search("app.use(csrfProtection)")
+
+
+# --- v0.4 : Firebase + SARIF ---
+
+def test_detecte_firebase_ouvert(vuln):
+    assert any("Firebase" in t and "true" in t for t in titles(vuln))
+
+
+def test_export_sarif_valide(vuln):
+    import json
+    from vibehunt import sarif
+    doc = json.loads(sarif.to_sarif(vuln))
+    assert doc["version"] == "2.1.0"
+    assert doc["runs"][0]["tool"]["driver"]["name"] == "vibehunt"
+    assert len(doc["runs"][0]["results"]) == len(vuln["findings"])

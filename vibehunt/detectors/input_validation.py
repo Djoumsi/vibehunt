@@ -25,12 +25,21 @@ EXEC_SINKS = [
     ("os.system / subprocess shell", re.compile(r"(os\.system\s*\(|shell\s*=\s*True)")),
 ]
 # injection SQL par concaténation / f-string
+# Concaténation SQL avec une VARIABLE (pas de l'arithmétique sur une colonne,
+# pas une requête préparée). On exige un fragment qui ressemble à une variable.
 SQL_CONCAT = re.compile(
     r"""(?ix)
-    (select|insert|update|delete|from|where)\b[^;\n]*? # début de requête (guillemets tolérés)
-    (\+\s*\w+|\$\{|\bf["'][^"']*\{|%\s*\(|\.\s*format\s*\() # concat/interp d'une variable
+    (select|insert|update|delete|from|where)\b[^;\n]*?
+    (\+\s*[$]?[a-zA-Z_]\w*        # + variable (JS/PHP), pas + 42
+     |\$\{[^}]+\}                 # ${expr}
+     |\.\s*[a-zA-Z_]\w*\s*\+    # 'str' . var (PHP) suivi de concat
+     |\bf["'][^"']*\{             # f-string Python
+     |%\s*\([^)]*\)              # %(name)s à la main
+     |\.\s*format\s*\()
     """
 )
+# indices d'une requête paramétrée (donc SÛRE) — on n'alerte pas dans ce cas
+PARAMETERIZED = re.compile(r"(?i)(\?\s*[),]|:\w+\b|%s\b|\bprepare\s*\(|execute\s*\(\s*\[)")
 # indices qu'une donnée variable alimente le puits (vs constante)
 VAR_HINT = re.compile(r"(\{|\$\{|\+\s*\w|props\.|state\.|req\.|params|query|body|input|value|data\b)")
 
@@ -82,7 +91,7 @@ def run(ctx):
                         confidence="probable", exposure="internet",
                     ))
             # SQL par concaténation
-            if SQL_CONCAT.search(line):
+            if SQL_CONCAT.search(line) and not PARAMETERIZED.search(line):
                 ctx.add(Finding(
                     detector="input_validation",
                     title="Requête SQL construite par concaténation",

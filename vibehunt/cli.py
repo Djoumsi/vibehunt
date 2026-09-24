@@ -17,7 +17,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import engine, report, collector
+from . import engine, report, collector, sarif
 
 
 def _clone_if_url(target: str) -> tuple[str, bool]:
@@ -51,6 +51,10 @@ def cmd_scan(args):
         Path(args.html).write_text(report.to_html(result), encoding="utf-8")
         print(f"Rapport HTML écrit dans {args.html}", file=sys.stderr)
 
+    if args.sarif:
+        Path(args.sarif).write_text(sarif.to_sarif(result), encoding="utf-8")
+        print(f"Rapport SARIF écrit dans {args.sarif}", file=sys.stderr)
+
     if not args.no_store:
         sid = collector.store(result, args.db)
         print(f"Findings collectés (scan #{sid}) dans {args.db}", file=sys.stderr)
@@ -63,6 +67,25 @@ def cmd_scan(args):
 def cmd_stats(args):
     import json
     print(json.dumps(collector.stats(args.db), ensure_ascii=False, indent=2))
+
+
+def cmd_report(args):
+    """Comparatif des dernières collectes : classe les apps par risque et montre
+    les failles les plus répandues (volet analyse du mémoire)."""
+    data = collector.comparison(args.db)
+    apps = sorted(data["apps"], key=lambda a: (a["critique"], a["elevee"], a["total"]), reverse=True)
+    print("# Comparatif multi-apps — vibehunt\n")
+    if not apps:
+        print("Aucune collecte. Lance d'abord des scans (sans --no-store).")
+        return
+    print("| App | Plateforme | 🔴 Crit | 🟠 Élev | 🟡 Moy | Total |")
+    print("|---|---|---|---|---|---|")
+    for a in apps:
+        name = a["target"].split("/")[-1]
+        print(f"| {name} | {a['platform']} | {a['critique']} | {a['elevee']} | {a['moyenne']} | {a['total']} |")
+    print("\n## Failles les plus répandues (nb d'apps concernées)\n")
+    for title, n in data["failles_repandues"]:
+        print(f"- {n} app(s) : {title}")
 
 
 def cmd_live(args):
@@ -114,11 +137,15 @@ def main(argv=None):
     s.add_argument("--json", action="store_true")
     s.add_argument("--out", help="écrire le rapport Markdown dans un fichier")
     s.add_argument("--html", help="écrire un rapport HTML autonome dans un fichier")
+    s.add_argument("--sarif", help="écrire un rapport SARIF 2.1.0 (GitHub Code Scanning)")
     s.add_argument("--no-store", action="store_true", help="ne pas collecter en base")
     s.set_defaults(func=cmd_scan)
 
     st = sub.add_parser("stats", help="statistiques des collectes")
     st.set_defaults(func=cmd_stats)
+
+    rp = sub.add_parser("report", help="rapport comparatif multi-apps depuis la collecte")
+    rp.set_defaults(func=cmd_report)
 
     lv = sub.add_parser("live", help="confirmation dynamique RLS Supabase (vos apps)")
     lv.add_argument("url", help="URL de l'app (informatif)")

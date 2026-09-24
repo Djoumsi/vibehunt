@@ -78,3 +78,35 @@ def stats(db_path=DEFAULT_DB) -> dict:
                 "top_failles": top, "par_plateforme": by_platform}
     finally:
         conn.close()
+
+
+def comparison(db_path=DEFAULT_DB) -> dict:
+    """Vue comparative de la dernière collecte de chaque cible : sert à comparer
+    plusieurs apps vibe codées entre elles (cœur du volet analyse du mémoire)."""
+    conn = _conn(db_path)
+    try:
+        # dernier scan par cible
+        rows = conn.execute("""
+            SELECT s.target, s.platform, s.scanned_at, s.id
+            FROM scans s
+            JOIN (SELECT target, MAX(scanned_at) mx FROM scans GROUP BY target) last
+              ON s.target = last.target AND s.scanned_at = last.mx
+            ORDER BY s.scanned_at DESC
+        """).fetchall()
+        apps = []
+        for target, platform, ts, scan_id in rows:
+            sev = dict(conn.execute(
+                "SELECT severity, COUNT(*) FROM findings WHERE scan_id=? GROUP BY severity",
+                (scan_id,)).fetchall())
+            apps.append({"target": target, "platform": platform,
+                         "critique": sev.get("critique", 0), "elevee": sev.get("elevee", 0),
+                         "moyenne": sev.get("moyenne", 0), "faible": sev.get("faible", 0),
+                         "total": sum(sev.values())})
+        # failles les plus répandues à travers les apps (dédupliquées par cible)
+        spread = conn.execute("""
+            SELECT title, COUNT(DISTINCT scan_id) n FROM findings
+            GROUP BY title ORDER BY n DESC LIMIT 12
+        """).fetchall()
+        return {"apps": apps, "failles_repandues": spread}
+    finally:
+        conn.close()

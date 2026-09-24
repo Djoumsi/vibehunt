@@ -34,9 +34,25 @@ def _is_client(rel: str) -> bool:
                                 ".jsx", ".tsx", ".vue", ".svelte", "index.html"))
 
 
+def _supabase_used(ctx) -> bool:
+    """La notion de RLS est propre à Supabase/Postgres-avec-RLS. On ne signale
+    des tables « sans RLS » que si l'app utilise réellement Supabase, sinon on
+    prendrait tout schéma MySQL classique pour une base Supabase non protégée."""
+    for path in ctx.iter_files():
+        t = ctx.read(path)
+        if not t:
+            continue
+        if ("@supabase/supabase-js" in t or "supabase.co" in t
+                or "createClient(" in t and "supabase" in t.lower()
+                or "auth.uid()" in t or "enable row level security" in t.lower()):
+            return True
+    return False
+
+
 def run(ctx):
     sql_files, uses_from, defines_rls = [], False, False
     tables_created, tables_with_rls = set(), set()
+    supabase_used = _supabase_used(ctx)
 
     for path in ctx.iter_files():
         rel = ctx.rel(path)
@@ -98,7 +114,7 @@ def run(ctx):
 
     # tables créées sans aucune RLS visible
     orphan = tables_created - tables_with_rls
-    if sql_files and orphan and not defines_rls:
+    if supabase_used and sql_files and orphan and not defines_rls:
         ctx.add(Finding(
             detector="supabase_rls",
             title=f"{len(orphan)} table(s) Supabase créée(s) sans RLS visible",
@@ -113,7 +129,7 @@ def run(ctx):
                         "Confirmer en dynamique avec vibehunt --live.",
             confidence="a_verifier", exposure="internet_no_auth",
         ))
-    elif uses_from and not sql_files:
+    elif supabase_used and uses_from and not sql_files:
         ctx.add(Finding(
             detector="supabase_rls",
             title="Requêtes Supabase côté client sans migration RLS dans le repo",

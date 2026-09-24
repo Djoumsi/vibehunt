@@ -52,7 +52,11 @@ vibehunt scan https://github.com/moi/mon-app
 # Rapports dans un fichier (Markdown, HTML autonome) + sortie JSON
 vibehunt scan ./mon-app --out rapport.md
 vibehunt scan ./mon-app --html rapport.html
+vibehunt scan ./mon-app --sarif rapport.sarif   # pour GitHub Code Scanning / CI
 vibehunt scan ./mon-app --json
+
+# Comparatif de toutes les apps scannées (depuis la base de collecte)
+vibehunt report
 
 # Statistiques agrégées de toutes vos collectes
 vibehunt stats
@@ -86,7 +90,8 @@ vibehunt/
     ├── input_validation.py   # XSS (dangerouslySetInnerHTML, v-html…) et injection SQL
     ├── dependencies.py       # SCA (npm audit), lockfile absent, hachage MD5/SHA1
     ├── ssrf.py               # requête sortante vers une URL contrôlée par l'utilisateur
-    └── missing_protections.py # CSRF, rate limiting, signature de webhook (HMAC) absents
+    ├── missing_protections.py # CSRF, rate limiting, signature de webhook (HMAC) absents
+    └── firebase.py           # règles Firebase ouvertes (allow ... : if true)
 ```
 
 ### Ajouter un détecteur
@@ -109,8 +114,9 @@ score de risque 0–100).
   d'ABSENCE de protection — CSRF, rate limiting sur l'auth, signature de
   webhook (HMAC). Détecteurs d'absence conditionnés à des prérequis stricts
   et marqués « à vérifier » pour limiter les faux positifs.
-- **v0.4** : Firebase (règles ouvertes), export CI/SARIF, rapport comparatif
-  multi-apps depuis la base de collecte.
+- **v0.4 (actuel)** : détecteur Firebase (règles ouvertes), export **SARIF 2.1.0**
+  (GitHub Code Scanning), commande `report` comparant les apps collectées.
+- **v0.5 (idées)** : détection de licences, SBOM, plugin CI prêt à l'emploi.
 
 ## Note de conception : présence vs absence
 

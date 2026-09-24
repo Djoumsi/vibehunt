@@ -53,12 +53,18 @@ class ScanContext:
     # extensions pertinentes pour du vibe code web
     CODE_EXT = {".js", ".jsx", ".ts", ".tsx", ".vue", ".svelte", ".astro",
                 ".json", ".env", ".html", ".py", ".php", ".mjs", ".cjs",
-                ".toml", ".yaml", ".yml", ".sql"}
+                ".toml", ".yaml", ".yml", ".sql", ".rules"}
+
+    SKIP_FILE = (".min.js", ".min.css", ".bundle.js", ".chunk.js", "-min.js",
+                 ".umd.min.js", ".production.min.js")
 
     def iter_files(self):
         for dirpath, dirnames, filenames in os.walk(self.root):
             dirnames[:] = [d for d in dirnames if d not in self.SKIP_DIRS]
             for fn in filenames:
+                # ignorer les bundles/minifiés tiers (bruit, faux positifs)
+                if any(fn.endswith(suf) for suf in self.SKIP_FILE):
+                    continue
                 p = Path(dirpath) / fn
                 if p.suffix in self.CODE_EXT or fn.startswith(".env"):
                     yield p

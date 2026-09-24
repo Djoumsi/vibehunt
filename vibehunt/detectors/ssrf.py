@@ -12,9 +12,17 @@ from ..model import Finding
 
 # appels sortants
 OUTBOUND = re.compile(
-    r"(?ix)\b(fetch|axios(?:\.(get|post|put|delete|request))?|"
-    r"got|superagent|http\.get|https\.get|request|requests\.(get|post)|"
-    r"urllib\.request\.urlopen|urlopen|httpx\.(get|post)|node-fetch)\s*\("
+    r"""(?ix)
+    (?<![.>])\bfetch\s*\(                       # fetch( global, PAS ->fetch()/.fetch()
+  | \baxios(?:\.(get|post|put|delete|request))?\s*\(
+  | \b(got|superagent)\s*\(
+  | \bhttps?\.get\s*\(
+  | \brequests\.(get|post)\s*\(
+  | \burllib\.request\.urlopen\s*\(
+  | \bhttpx\.(get|post)\s*\(
+  | \bfile_get_contents\s*\(                    # PHP
+  | \bcurl_setopt\b
+    """
 )
 # indices que l'URL est contrôlée par l'utilisateur
 USER_INPUT = re.compile(
