@@ -1,0 +1,3 @@
+# vibehunt fonctionne en pure bibliothèque standard Python pour le scan statique.
+# Dépendances de développement uniquement :
+pytest>=7.0

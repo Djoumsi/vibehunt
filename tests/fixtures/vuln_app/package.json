@@ -1,0 +1,1 @@
+{ "name": "my-lovable-app", "dependencies": { "@supabase/supabase-js": "^2.39.0", "react": "^18.2.0" } }

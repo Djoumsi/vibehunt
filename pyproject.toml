@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vibehunt"
+version = "0.1.0"
+description = "Scanner de sécurité pour applications vibe codées (Lovable, Bolt, v0, Replit, Cursor, Codex, Claude Code...)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+[project.scripts]
+vibehunt = "vibehunt.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["vibehunt*"]
